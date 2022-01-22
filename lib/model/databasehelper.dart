@@ -81,7 +81,7 @@ class DataBaseHelper {
   }
 
   static Future<int> update(
-      String table, var content, String where, int val) async {
+      String table, var content, String where, String val) async {
     final db = await DataBaseHelper.db();
     final data = content;
     final result = await db.update(table, data, where: where, whereArgs: [val]);

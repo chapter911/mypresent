@@ -16,7 +16,12 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  String _username = "", _nama = "", _ttl = "", _alamat = "", _jabatan = "";
+  String _username = "",
+      _password = "",
+      _nama = "",
+      _ttl = "",
+      _alamat = "",
+      _jabatan = "";
 
   @override
   void initState() {
@@ -27,12 +32,224 @@ class _UserPageState extends State<UserPage> {
   Future<void> getUser() async {
     _username = (await DataSharedPreferences().readString("username"))!;
     DataBaseHelper.getWhere('user', "username = '$_username'").then((value) {
+      _password = value[0]['password'];
       _nama = value[0]['nama'];
       _ttl = value[0]['tanggallahir'];
       _alamat = value[0]['alamat'];
       _jabatan = value[0]['jabatan'];
       setState(() {});
     });
+  }
+
+  void dialogEditAkun() {
+    final TextEditingController _username = TextEditingController();
+    final TextEditingController _nama = TextEditingController();
+    final TextEditingController _tanggallahir = TextEditingController();
+    final TextEditingController _alamat = TextEditingController();
+    final TextEditingController _password = TextEditingController();
+    final TextEditingController _konfirmasi = TextEditingController();
+
+    String _jabatan = "- PILIH -";
+    List<String> aJabatan = ["- PILIH -", "Kontrak", "Tetap"];
+
+    setState(() {
+      _username.text = this._username;
+      _nama.text = this._nama;
+      _tanggallahir.text = _ttl;
+      _alamat.text = this._alamat;
+      _password.text = this._password;
+      _konfirmasi.text = this._password;
+    });
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        titlePadding: const EdgeInsets.all(0),
+        title: Container(
+          padding: const EdgeInsets.all(10),
+          color: Colors.red,
+          child: const Center(
+            child: Text(
+              "Edit Akun",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
+        content: SizedBox(
+          height: 250,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _username,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'username',
+                    labelText: 'username',
+                    prefixIcon: Icon(Icons.mail),
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                TextField(
+                  controller: _nama,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'nama',
+                    labelText: 'nama',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                TextField(
+                  controller: _tanggallahir,
+                  onTap: () {
+                    showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now())
+                        .then((value) {
+                      DateFormat formatter = DateFormat('dd-MM-yyyy');
+                      String formatted = formatter.format(value!);
+                      setState(() {
+                        _tanggallahir.text = formatted;
+                      });
+                    });
+                  },
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Tanggal Lahir',
+                    labelText: 'Tanggal Lahir',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                TextField(
+                  controller: _alamat,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'alamat',
+                    labelText: 'alamat',
+                    prefixIcon: Icon(Icons.home),
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                DropdownButtonFormField(
+                  decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Jabatan',
+                      prefixIcon: Padding(
+                          padding: EdgeInsets.only(top: 15.0),
+                          child: Icon(Icons.category))),
+                  isExpanded: true,
+                  items: aJabatan.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _jabatan = value as String;
+                    });
+                  },
+                  value: _jabatan,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                TextField(
+                  controller: _password,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Password',
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.vpn_key),
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                TextField(
+                  controller: _konfirmasi,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Konfirmasi Password',
+                    labelText: 'Konfirmasi Password',
+                    prefixIcon: Icon(Icons.vpn_key),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: const Text("BATAL"),
+            style: ElevatedButton.styleFrom(primary: Colors.red),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_username.text.isEmpty ||
+                  _nama.text.isEmpty ||
+                  _tanggallahir.text.isEmpty ||
+                  _alamat.text.isEmpty ||
+                  (_jabatan == "- PILIH -") ||
+                  _password.text.isEmpty) {
+                Get.snackbar("Maaf", "Harap Lengkapi Data Anda",
+                    backgroundColor: Colors.red);
+              } else if (_password.text != _konfirmasi.text) {
+                Get.snackbar("Maaf", "Password dan Konfirmasi Tidak Sama",
+                    backgroundColor: Colors.red);
+              } else {
+                DataBaseHelper.update(
+                        "user",
+                        {
+                          'password': _password.text,
+                          'nama': _nama.text,
+                          'tanggallahir': _tanggallahir.text,
+                          'alamat': _alamat.text,
+                          'jabatan': _jabatan,
+                          'level': "user",
+                        },
+                        "username=?",
+                        _username.text)
+                    .then((value) {
+                  if (value > 0) {
+                    getUser();
+                    Get.back();
+                    Get.snackbar(
+                        "Informasi", "Berhasil Memperbaharui Akun Anda",
+                        backgroundColor: Colors.green);
+                  } else {
+                    Get.back();
+                    Get.snackbar("Informasi", "Gagal Memperbaharui Akun Anda",
+                        backgroundColor: Colors.red);
+                  }
+                });
+              }
+            },
+            child: const Text("SIMPAN"),
+          ),
+        ],
+      ),
+    );
   }
 
   void dialogAbsen(String mode) {
@@ -94,7 +311,7 @@ class _UserPageState extends State<UserPage> {
                             'absensi',
                             {'siangpulang': jamFormat.format(DateTime.now())},
                             'id=?',
-                            id)
+                            id.toString())
                         .then((value) {
                       if (value > 0) {
                         Get.back();
@@ -112,7 +329,7 @@ class _UserPageState extends State<UserPage> {
                             'absensi',
                             {'siangmasuk': jamFormat.format(DateTime.now())},
                             'id=?',
-                            id)
+                            id.toString())
                         .then((value) {
                       if (value > 0) {
                         Get.back();
@@ -130,7 +347,7 @@ class _UserPageState extends State<UserPage> {
                             'absensi',
                             {'pulang': jamFormat.format(DateTime.now())},
                             'id=?',
-                            id)
+                            id.toString())
                         .then((value) {
                       if (value > 0) {
                         Get.back();
@@ -255,10 +472,20 @@ class _UserPageState extends State<UserPage> {
                         ),
                         actions: [
                           ElevatedButton(
-                              onPressed: () {
-                                Get.back();
-                              },
-                              child: const Text("TUTUP"))
+                            onPressed: () {
+                              Get.back();
+                              dialogEditAkun();
+                            },
+                            child: const Text("EDIT AKUN"),
+                            style:
+                                ElevatedButton.styleFrom(primary: Colors.red),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Get.back();
+                            },
+                            child: const Text("TUTUP"),
+                          ),
                         ],
                       ));
             },
